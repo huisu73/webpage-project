@@ -1,5 +1,18 @@
+const searchInput = document.getElementById("searchInput");
+const searchBtn = document.getElementById("searchBtn");
+const resultCard = document.getElementById("resultCard");
+const errorMsg = document.getElementById("errorMsg");
+
+function showLoading() {
+  resultCard.innerHTML = `
+    <div class="loading">⏳ 요약 생성 중입니다...</div>
+  `;
+}
+
 async function getNews(keyword) {
   try {
+    showLoading();
+
     const res = await fetch("/api/news", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -8,9 +21,8 @@ async function getNews(keyword) {
 
     const data = await res.json();
     renderNews(data.items);
-
   } catch (e) {
-    document.getElementById("errorMsg").textContent = "오류 발생: " + e.message;
+    errorMsg.textContent = "오류 발생: " + e.message;
   }
 }
 
@@ -25,8 +37,7 @@ async function summarize(title, description, link) {
 }
 
 async function renderNews(items) {
-  const container = document.getElementById("resultCard");
-  container.innerHTML = "";
+  resultCard.innerHTML = "";
 
   for (const item of items) {
     const cleanTitle = item.title.replace(/<[^>]+>/g, "");
@@ -39,16 +50,20 @@ async function renderNews(items) {
 
     card.innerHTML = `
       <div class="card-title">${cleanTitle}</div>
-      <div class="card-summary">${summary.text}</div>
+      <div class="card-summary">${summary.text || "요약 없음"}</div>
       <a href="${item.link}" target="_blank" class="card-link">원문 보기</a>
     `;
 
-    container.appendChild(card);
+    resultCard.appendChild(card);
   }
 }
 
-document.getElementById("searchBtn").addEventListener("click", () => {
+searchBtn.addEventListener("click", () => {
   const keyword = searchInput.value.trim();
   if (keyword) getNews(keyword);
 });
 
+// 👉 엔터로 검색 실행
+searchInput.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") searchBtn.click();
+});
